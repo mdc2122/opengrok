@@ -269,12 +269,16 @@ MACHO_MAGICS = (b"\xfe\xed\xfa\xce", b"\xfe\xed\xfa\xcf",
 
 
 def _macho_leaves(bundle):
-    """Every loose Mach-O file under the bundle that is NOT itself a code
-    bundle (nested .app/.framework/.xpc seal their own leaves). Framework
-    Libraries/*.dylib, Helpers/* binaries, and app.asar.unpacked natives
-    still carry the vendor Team ID after a bundle-level ad-hoc re-sign —
-    library validation then kills the ad-hoc main at first dyld map with
-    "different Team IDs". They must ALL be re-signed first."""
+    """Loose Mach-O files under the bundle OUTSIDE any nested code bundle
+    (nested .app/.framework/.xpc subtrees are skipped — their seal covers
+    them, and on this build their internals stay vendor-signed: Electron
+    Framework Helpers/* and Libraries/*.dylib still carry Team DCNK4UB866
+    after a re-seal, which boots fine once library validation is off).
+    What this DOES catch: the main executable and the app.asar.unpacked
+    native .node modules — the latter are dlopen'd by the app process and
+    are the leaves that must not keep a Team ID mismatch against the
+    ad-hoc-signed main (belt-and-suspenders alongside dropping the
+    hardened runtime, which is the decisive library-validation fix)."""
     out = []
     skip = set()
     for b in _nested_code(bundle):
