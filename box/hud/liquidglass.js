@@ -1031,7 +1031,11 @@
           `;
         });
         const staticIds = new Set(MODEL_CATALOG.map(c => c.id));
-        const upstream = upstreamCatalogByHop[hopOfBinding(cur.hopRoute)] || [];
+        // same key as the fetch: the agent's bound hop. cur.hopRoute is the
+        // literal "app-native-transcript" once a native reply exists, which
+        // made every live /v1/models row invisible.
+        const boundHop = (bindings[cur.agentId] && bindings[cur.agentId].hopBaseUrl) || cur.hopRoute;
+        const upstream = upstreamCatalogByHop[hopOfBinding(boundHop)] || [];
         upstream.filter(u => !staticIds.has(u.id) && (u.label.toLowerCase().includes(filter) || u.id.toLowerCase().includes(filter))).forEach(u => {
           const isActive = (u.id === cur.modelId);
           optionsList += `
